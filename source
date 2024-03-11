@@ -1,0 +1,514 @@
+-- // EngoUI V2
+local mouse = game.Players.LocalPlayer:GetMouse()
+local TS = game:GetService("TweenService")
+local RS = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+local rainbowvalue = 0.01
+
+-- Themes
+EngoThemes = {
+    Engo = {
+        TextColor = Color3.fromRGB(255, 255, 255),
+        DescriptionTextColor = Color3.fromRGB(150, 150, 150),
+        DarkTextColor = Color3.fromRGB(100, 100, 100),
+        DarkContrast = Color3.fromRGB(4, 4, 22),
+        LightContrast = Color3.fromRGB(15, 16, 41),
+        BackgroundGradient = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(3, 5, 16)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(4, 4, 22))},
+        Darkness = Color3.fromRGB(0, 0, 0),
+    },
+    Swamp = {
+        TextColor = Color3.fromRGB(255, 255, 255),
+        DescriptionTextColor = Color3.fromRGB(150, 150, 150),
+        DarkTextColor = Color3.fromRGB(100, 100, 100),
+        DarkContrast = Color3.fromRGB(10, 29, 6),
+        LightContrast = Color3.fromRGB(28, 80, 43),
+        BackgroundGradient = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(5, 27, 10)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(6, 37, 17))},
+        Darkness = Color3.fromRGB(0, 0, 0),
+    },
+    Sky = {
+        TextColor = Color3.fromRGB(255, 255, 255),
+        DescriptionTextColor = Color3.fromRGB(212, 212, 212),
+        DarkTextColor = Color3.fromRGB(161, 161, 161),
+        DarkContrast = Color3.fromRGB(32, 119, 177),
+        LightContrast = Color3.fromRGB(56, 137, 175),
+        BackgroundGradient = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(63, 127, 153)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(25, 118, 155))},
+        Darkness = Color3.fromRGB(0, 0, 0),
+    },
+    Crimson = {
+        TextColor = Color3.fromRGB(255, 255, 255),
+        DescriptionTextColor = Color3.fromRGB(212, 212, 212),
+        DarkTextColor = Color3.fromRGB(161, 161, 161),
+        DarkContrast = Color3.fromRGB(54, 11, 11),
+        LightContrast = Color3.fromRGB(167, 50, 50),
+        BackgroundGradient = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(83, 30, 30)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(138, 45, 45))},
+        Darkness = Color3.fromRGB(0, 0, 0),
+    },
+    Gray = {
+        TextColor = Color3.fromRGB(255, 255, 255),
+        DescriptionTextColor = Color3.fromRGB(212, 212, 212),
+        DarkTextColor = Color3.fromRGB(161, 161, 161),
+        DarkContrast = Color3.fromRGB(24, 24, 24),
+        LightContrast = Color3.fromRGB(58, 58, 58),
+        BackgroundGradient = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(29, 29, 29)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(39, 39, 39))},
+        Darkness = Color3.fromRGB(0, 0, 0),
+    },
+    Discord = {
+        TextColor = Color3.fromRGB(255, 255, 255),
+        DescriptionTextColor = Color3.fromRGB(212, 212, 212),
+        DarkTextColor = Color3.fromRGB(161, 161, 161),
+        DarkContrast = Color3.fromRGB(41, 43, 47),
+        LightContrast = Color3.fromRGB(54, 57, 63),
+        BackgroundGradient = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(64, 68, 75)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(64, 68, 75))},
+        Darkness = Color3.fromRGB(0, 0, 0),
+    },
+}
+local theme = EngoThemes.Engo
+
+-- Functions
+local old_err = error
+local function error(message)
+    old_err("[EngoUILib] "..tostring(message))
+end
+
+local function RelativeXY(GuiObject, location)
+	local x, y = location.X - GuiObject.AbsolutePosition.X, location.Y - GuiObject.AbsolutePosition.Y
+	local x2 = 0
+	local xm, ym = GuiObject.AbsoluteSize.X, GuiObject.AbsoluteSize.Y
+	x2 = math.clamp(x, 4, xm - 6)
+	x = math.clamp(x, 0, xm)
+	y = math.clamp(y, 0, ym)
+	return x, y, x/xm, y/ym, x2/xm
+end
+
+spawn(function()
+	repeat
+		for i = 0, 1, 0.01 do
+			wait(0.01)
+			rainbowvalue = i
+		end
+	until true == false
+end)
+
+local library = {}
+function library:SetTheme(themeSel)
+    if EngoThemes[themeSel] then 
+        theme = EngoThemes[themeSel]
+    elseif typeof(themeSel) == "table" then
+        for i,v in pairs(EngoThemes.Engo) do
+            if not themeSel[i] then
+                error("Custom themes needs "..tostring(i).." to work properly!")
+            end
+        end
+        theme = themeSel
+    else
+        error("Invalid theme!, please use correct name or custom theme.")
+    end
+end
+function library:CreateMain(title, description, keycode)
+    library["OriginalBind"] = keycode
+    library["Bind"] = keycode
+    local closeconnection 
+    function onSelfDestroy()
+        if getgenv().userInputConnection then
+            getgenv().userInputConnection:Disconnect()
+            getgenv().userInputConnection = nil
+        end
+        if closeconnection then
+            closeconnection:Disconnect()
+        end
+    end
+    if getgenv().EngoUILib then 
+        getgenv().EngoUILib:Destroy() 
+        onSelfDestroy()
+    end
+    local firstTab
+    local EngoUI = Instance.new("ScreenGui")
+    if syn then 
+        syn.protect_gui(EngoUI)
+    end
+    EngoUI.Parent = gethui and gethui() or game.CoreGui
+    getgenv().EngoUILib = EngoUI
+    closeconnection = UIS.InputEnded:Connect(function(input,yes)
+        local TextBoxFocused = UIS:GetFocusedTextBox()
+        if TextBoxFocused then return end
+        if input.KeyCode == library["Bind"] and not yes and not library["IsBinding"] then
+            EngoUI.Enabled = not EngoUI.Enabled
+        end
+    end)
+
+    local Main = Instance.new("Frame")
+    local UIGradient = Instance.new("UIGradient")
+    local UICorner = Instance.new("UICorner")
+    local Sidebar = Instance.new("ScrollingFrame")
+    local UIListLayout = Instance.new("UIListLayout")
+    local Topbar = Instance.new("Frame")
+    local Info = Instance.new("Frame")
+    local Title = Instance.new("TextLabel")
+    local Description = Instance.new("TextLabel")
+
+    EngoUI.Name = "EngoUI"
+    EngoUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    Main.Name = "Main"
+    Main.Parent = EngoUI
+    Main.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Main.Position = UDim2.new(0.54207927, 0, 0.307602346, 0)
+    Main.Size = UDim2.new(0, 550, 0, 397)
+    Main.Active = true
+    Main.Draggable = true
+
+    UIGradient.Color = theme.BackgroundGradient
+    UIGradient.Offset = Vector2.new(-0.25, 0)
+    UIGradient.Parent = Main
+
+    UICorner.CornerRadius = UDim.new(0, 6)
+    UICorner.Parent = Main
+
+    Sidebar.Name = "Sidebar"
+    Sidebar.Parent = Main
+    Sidebar.Active = true
+    Sidebar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Sidebar.BackgroundTransparency = 1.000
+    Sidebar.Position = UDim2.new(0.043636363, 0, 0.158690169, 0)
+    Sidebar.Size = UDim2.new(0, 93, 0, 314)
+    Sidebar.CanvasSize = UDim2.new(0, 0, 0, 0)
+    Sidebar.ScrollBarThickness = 0
+    Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+    UIListLayout.Parent = Sidebar
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Padding = UDim.new(0, 15)
+
+    Topbar.Name = "Topbar"
+    Topbar.Parent = Main
+    Topbar.BackgroundColor3 = Color3.fromRGB(1, 1, 1)
+    Topbar.BackgroundTransparency = 1.000
+    Topbar.Size = UDim2.new(0, 550, 0, 53)
+
+    Info.Name = "Info"
+    Info.Parent = Topbar
+    Info.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Info.BackgroundTransparency = 1.000
+    Info.Position = UDim2.new(0, 0, 0.113207549, 0)
+    Info.Size = UDim2.new(0, 151, 0, 47)
+
+    Title.Name = "Title"
+    Title.Parent = Info
+    Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Title.BackgroundTransparency = 1.000
+    Title.Position = UDim2.new(0.158940405, 0, 0.132075474, 0)
+    Title.Size = UDim2.new(0, 116, 0, 21)
+    Title.Font = Enum.Font.GothamBold
+    Title.Text = title
+    Title.TextColor3 =  theme.TextColor
+    Title.TextSize = 18.000
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+
+    Description.Name = "Description"
+    Description.Parent = Info
+    Description.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Description.BackgroundTransparency = 1.000
+    Description.Position = UDim2.new(0.158940405, 0, 0.528301895, 0)
+    Description.Size = UDim2.new(0, 116, 0, 16)
+    Description.Font = Enum.Font.Gotham
+    Description.Text = description
+    Description.TextColor3 = theme.DescriptionTextColor
+    Description.TextSize = 11.000
+    Description.TextXAlignment = Enum.TextXAlignment.Left
+
+    local library2 = {}
+    library2["Tabs"] = {}
+    function library2:CreateTab(name)
+
+        local library3 = {}
+
+        local UIListLayout_2 = Instance.new("UIListLayout") 
+        local TabButton = Instance.new("TextButton")
+        local Tab = Instance.new("ScrollingFrame")
+
+        TabButton.Parent = Sidebar
+        TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TabButton.BackgroundTransparency = 1.000
+        TabButton.Size = UDim2.new(0, 121, 0, 26)
+        TabButton.Font = Enum.Font.Gotham
+        TabButton.Text = name
+        TabButton.TextColor3 =  theme.DarkTextColor
+        TabButton.TextSize = 14.000
+        TabButton.TextWrapped = true
+        TabButton.TextXAlignment = Enum.TextXAlignment.Left
+        TabButton.Name = name.."TabButton"
+
+        Tab.Name = name.."Tab"
+        Tab.Parent = Main
+        Tab.Active = true
+        Tab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Tab.BackgroundTransparency = 1.000
+        Tab.BorderSizePixel = 0
+        Tab.Position = UDim2.new(0.289090902, 0, 0.151133507, 0)
+        Tab.Size = UDim2.new(0, 375, 0, 309)
+        Tab.CanvasSize = UDim2.new(0, 0, 0, 0)
+        Tab.ScrollBarThickness = 0
+        Tab.TopImage = ""
+        Tab.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+        UIListLayout_2.Parent = Tab
+        UIListLayout_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        UIListLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
+        UIListLayout_2.Padding = UDim.new(0, 3)
+
+        library2["Tabs"][name] = {
+            Instance = Tab,
+            Button = TabButton,
+        }
+
+        if not firstTab then 
+            firstTab = library2["Tabs"][name]
+            TabButton.TextColor3 = theme.TextColor
+        else
+            Tab.Visible = false
+            TabButton.TextColor3 = theme.DarkTextColor
+        end
+
+        function library2:OpenTab(tab)
+            for i,v in pairs(library2["Tabs"]) do 
+                if i ~= tab then
+                    v.Instance.Visible = false
+                    v.Button.TextColor3 = theme.DarkTextColor
+                else
+                    v.Instance.Visible = true
+                    v.Button.TextColor3 =  theme.TextColor
+                end
+            end
+        end
+
+        TabButton.MouseButton1Click:Connect(function()
+            library2:OpenTab(name)
+        end)
+
+        function library3:CreateButton(text, callback)
+            callback = callback or function() end
+            local Button = Instance.new("TextButton")
+            local UICorner_2 = Instance.new("UICorner")
+            local Title_2 = Instance.new("TextLabel")
+            local Icon = Instance.new("ImageLabel")
+
+            Button.Name = text.."Button"
+            Button.Parent = Tab
+            Button.BackgroundColor3 = theme.LightContrast
+            Button.BackgroundTransparency = 0
+            Button.Size = UDim2.new(0, 375, 0, 49)
+            Button.Font = Enum.Font.SourceSans
+            Button.Text = ""
+            Button.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Button.TextSize = 14.000
+
+            UICorner_2.CornerRadius = UDim.new(0, 6)
+            UICorner_2.Parent = Button
+
+            Title_2.Name = "Title"
+            Title_2.Parent = Button
+            Title_2.AnchorPoint = Vector2.new(0, 0.5)
+            Title_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Title_2.BackgroundTransparency = 1.000
+            Title_2.Position = UDim2.new(0.141000003, 0, 0.5, 0)
+            Title_2.Size = UDim2.new(0, 263, 0, 21)
+            Title_2.Font = Enum.Font.GothamSemibold
+            Title_2.Text = text
+            Title_2.TextColor3 =  theme.TextColor
+            Title_2.TextSize = 14.000
+            Title_2.TextXAlignment = Enum.TextXAlignment.Left
+
+            Icon.Name = "Icon"
+            Icon.Parent = Button
+            Icon.AnchorPoint = Vector2.new(0, 0.5)
+            Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Icon.BackgroundTransparency = 1.000
+            Icon.ClipsDescendants = true
+            Icon.Position = UDim2.new(0.0400000028, 0, 0.5, 0)
+            Icon.Size = UDim2.new(0, 19, 0, 24)
+            Icon.Image = "rbxassetid://8284791761"
+            Icon.ScaleType = Enum.ScaleType.Stretch
+            Icon.ImageColor3 = theme.TextColor
+
+            Button.MouseButton1Click:Connect(function() 
+                spawn(function() pcall(callback) end)
+            end)
+            local obj = {
+                ["Type"] = "Button",
+                ["Instance"] = Button,
+                ["Api"] = nil
+            }
+            table.insert(library2["Tabs"][name], obj)
+        end
+
+        function library3:CreateToggle(text, callback)
+            local library4 = {}
+            library4["Enabled"] = false
+            callback = callback or function() end
+            local Toggle = Instance.new("TextButton")
+            local UICorner_3 = Instance.new("UICorner")
+            local Title_3 = Instance.new("TextLabel")
+            local Icon = Instance.new("ImageLabel")
+
+            Toggle.Name = text.."Toggle"
+            Toggle.Parent = Tab
+            Toggle.BackgroundColor3 = theme.LightContrast
+            Toggle.BackgroundTransparency = 0
+            Toggle.Size = UDim2.new(0, 375, 0, 49)
+            Toggle.Font = Enum.Font.SourceSans
+            Toggle.Text = ""
+            Toggle.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Toggle.TextSize = 14.000
+
+            UICorner_3.CornerRadius = UDim.new(0, 6)
+            UICorner_3.Parent = Toggle
+
+            Title_3.Name = "Title"
+            Title_3.Parent = Toggle
+            Title_3.AnchorPoint = Vector2.new(0, 0.5)
+            Title_3.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Title_3.BackgroundTransparency = 1.000
+            Title_3.Position = UDim2.new(0.138999999, 0, 0.520408154, 0)
+            Title_3.Size = UDim2.new(0, 264, 0, 21)
+            Title_3.Font = Enum.Font.GothamSemibold
+            Title_3.Text = text
+            Title_3.TextColor3 =  theme.TextColor
+            Title_3.TextSize = 14.000
+            Title_3.TextXAlignment = Enum.TextXAlignment.Left
+
+            Icon.Name = "Icon"
+            Icon.Parent = Toggle
+            Icon.AnchorPoint = Vector2.new(0, 0.5)
+            Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Icon.BackgroundTransparency = 1.000
+            Icon.ClipsDescendants = true
+            Icon.Position = UDim2.new(0.0320000015, 0, 0.5, 0)
+            Icon.Size = UDim2.new(0, 26, 0, 26)
+            Icon.ImageColor3 = theme.TextColor
+            Icon.Image = "rbxassetid://3926311105"
+            Icon.ImageRectOffset = Vector2.new(940, 784)
+            Icon.ImageRectSize = Vector2.new(48, 48)
+            Icon.SliceScale = 0.500
+
+            function library4:Toggle(bool)
+                bool = bool or (not library4["Enabled"])
+                library4["Enabled"] = bool
+                if not bool then 
+                    Icon.ImageRectOffset = Vector2.new(940, 784)
+                    Icon.ImageRectSize = Vector2.new(48, 48)
+                    spawn(function() callback(false) end)
+                else
+                    spawn(function() callback(true) end)
+                    Icon.ImageRectOffset = Vector2.new(4, 836)
+                    Icon.ImageRectSize = Vector2.new(48, 48)
+                end
+            end
+
+            Toggle.MouseButton1Click:Connect(function()
+                library4:Toggle()
+            end)
+
+            local obj = {
+                ["Type"] = "Toggle",
+                ["Instance"] = Toggle,
+                ["Api"] = library4
+            }
+            table.insert(library2["Tabs"][name], obj)
+            library4["Object"] = obj
+            return library4
+        end
+
+        function library3:CreateTextbox(text, callback)
+            local library4 = {}
+            library4["Text"] = ""
+
+            local Textbox = Instance.new("TextLabel")
+            local UICorner = Instance.new("UICorner")
+            local Icon = Instance.new("ImageLabel")
+            local Title = Instance.new("TextLabel")
+            local Textbox_2 = Instance.new("TextBox")
+            local UICorner_2 = Instance.new("UICorner")
+
+            Textbox.Name = text.."Textbox"
+            Textbox.Parent = Tab
+            Textbox.BackgroundColor3 = theme.LightContrast
+            Textbox.BackgroundTransparency = 0
+            Textbox.Position = UDim2.new(0, 0, 0.326860845, 0)
+            Textbox.Size = UDim2.new(0, 375, 0, 50)
+            Textbox.Font = Enum.Font.SourceSans
+            Textbox.Text = ""
+            Textbox.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Textbox.TextSize = 14.000
+
+            UICorner.CornerRadius = UDim.new(0, 6)
+            UICorner.Parent = Textbox
+
+            Icon.Name = "Icon"
+            Icon.Parent = Textbox
+            Icon.AnchorPoint = Vector2.new(0, 0.5)
+            Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Icon.BackgroundTransparency = 1.000
+            Icon.ClipsDescendants = true
+            Icon.Position = UDim2.new(0.032333333, 0, 0.5, 0)
+            Icon.Size = UDim2.new(0, 25, 0, 24)
+            Icon.Image = "rbxassetid://3926305904"
+            Icon.ImageRectOffset = Vector2.new(244, 44)
+            Icon.ImageRectSize = Vector2.new(36, 36)
+            Icon.ScaleType = Enum.ScaleType.Crop
+            Icon.SliceScale = 0.500
+            Icon.ImageColor3 = theme.TextColor
+
+            Title.Name = "Title"
+            Title.Parent = Textbox
+            Title.AnchorPoint = Vector2.new(0, 0.5)
+            Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Title.BackgroundTransparency = 1.000
+            Title.Position = UDim2.new(0.141000003, 0, 0.5, 0)
+            Title.Size = UDim2.new(0, 101, 0, 21)
+            Title.Font = Enum.Font.GothamSemibold
+            Title.Text = text
+            Title.TextColor3 =  theme.TextColor
+            Title.TextSize = 14.000
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+
+            Textbox_2.Name = "Textbox"
+            Textbox_2.Parent = Textbox
+            Textbox_2.AnchorPoint = Vector2.new(0, 0.5)
+            Textbox_2.BackgroundColor3 = theme.DarkContrast
+            Textbox_2.BorderSizePixel = 0
+            Textbox_2.Position = UDim2.new(0.43233332, 0, 0.5, 0)
+            Textbox_2.Size = UDim2.new(0, 201, 0, 20)
+            Textbox_2.Font = Enum.Font.Gotham
+            Textbox_2.PlaceholderColor3 = theme.DarkTextColor
+            Textbox_2.PlaceholderText = "Value"
+            Textbox_2.Text = ""
+            Textbox_2.TextColor3 = theme.DescriptionTextColor
+            Textbox_2.TextSize = 14.000
+            Textbox_2.TextWrapped = true
+            Textbox_2.FocusLost:Connect(function()
+                spawn(function() callback(Textbox_2.Text) end)
+                library4["Text"] = Textbox_2.Text
+            end)
+
+            UICorner_2.CornerRadius = UDim.new(0, 6)
+            UICorner_2.Parent = Textbox_2
+            local obj = {
+                ["Type"] = "Textbox",
+                ["Instance"] = Textbox,
+                ["Api"] = library4
+            }
+            table.insert(library2["Tabs"][name], obj)
+            library4["Object"] = obj
+            return library4
+        end
+
+        function library3:CreateSlider(text, min, max, callback)
+            local library4 = {}
+            library4["Value"] = nil
+            callback = callback or function() end
+
+            local Slider = Instance.new("TextButton")
+            local UICorner_4 = Instance.new("UICorner")
+            local Icon_3 = Instance.new("ImageLabel")
+            local Title_4 = Instance.new("Tex
